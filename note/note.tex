@@ -17,7 +17,7 @@
 \usepackage{totcount}
 \usepackage{calc}
 \usepackage{tabularx}
-
+\usepackage{ifthen}
 
 % Установка пути картинок
 \graphicspath{ {./images/} {./images.example/} }
@@ -27,7 +27,7 @@
 
 % Подключение файлов. В них возможны подключения библиотек. Поэтому выше список используемых  библиотек не полон.
 % Файл с константами документа
-\IfFileExists{constants.tex}{
+\IfFileExists{./constants.tex}{
     \input{./constants.tex}
 }{
     \input{./constants.example.tex}
