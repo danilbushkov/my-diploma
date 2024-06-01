@@ -2,9 +2,13 @@
 % Также возможно преопределение стилей, команд
 
 \usepackage{listings}
+% Стилизация кода
 \lstset{basicstyle=\ttfamily\large,
 	numbers=left,
 	frame=single,
 	xleftmargin=.25\textwidth,
 	xrightmargin=.25\textwidth
 }
+
+% команда пользовательских отступов от метки списка
+\newcommand{\clabelsep}{\ilabelsep*2}
