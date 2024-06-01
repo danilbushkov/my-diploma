@@ -1,0 +1,273 @@
+
+\subsubsection{Реализация модуля компонентов}
+
+
+Модуль компонентов содержит реализацию компонентов, а также
+предоставляет интерфейсы для работы с ними
+
+\paragraph{Интерфейсы модуля}
+
+Компоненты имеют следующую общую структуру, представленную на
+рисунке~\ref{f:comp-struct}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}
+{
+    id: number,
+    type: string,
+    path: string,
+    data: {
+        <field1>: any,
+        ...
+    },
+    outputs: {
+        <field1>: number,
+        <field2>: number,
+        ...
+    }
+}
+
+    \end{lstlisting}
+	\caption{Общая структура компонентов}
+	\label{f:comp-struct}
+\end{figure}
+
+Структура содержит следующие поля:
+\begin{itemize}
+	\item поле id идентифицирует компонент;
+	\item поле type содержит тип компонента в виде строки;
+	\item поле path предназначен для хранения пути данных для контекста,
+	      оно будет использоваться в зависимости от компонента: по нему будут или
+	      записываться данные, или считываться для последующего использования;
+	\item поле data содержит данные, которые будут использоваться
+	      компонентом. Данные индивидуальны для каждого компонента;
+	\item поле outputs содержит выходы компонента - id следующего
+	      возможного компонента. Часть полей общие, а остальные индивидуальны.
+
+\end{itemize}
+Общее поле outputs для всех компонентов - id следующего компонента.
+Для некоторых компонентов задаётся только во время выполнения.
+
+Если в поле outputs не определен какой-либо выход, который требуется
+для какого-либо компонента, ему присваивается пустое значение.
+
+Объект компонента создается функцией, представленной на рисунке~\ref{f:new-component}.
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+func NewComponentFromJSON(
+    tp ComponentType, 
+    jsonData []byte
+    ) (Component, error)
+    \end{lstlisting}
+	\caption{Функция создания компонента}
+	\label{f:new-component}
+\end{figure}
+
+Функция принимает тип компонента в виде строки и данные json,
+представленные в виде массива байтов.
+
+Каждый компонент имеет свою логику выполнения. Выполнением
+компонентов занимается объект Executor (Исполнитель).
+
+Исполнитель состоит из контекста и интерфейса ввода-вывода.
+Создание объекта исполнителя происходит с помощью функции,
+представленной на рисунке~\ref{f:new-executor}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+func NewExecutor(ctx *Context, io IO) *Executor 
+    \end{lstlisting}
+	\caption{Функция создания исполнителя}
+	\label{f:new-executor}
+\end{figure}
+
+Исполнитель имеет лишь один метод, представленный на рисунке~\ref{f:execute}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+func (e *Executor) Execute(
+        component Component) (*int64, error)
+    \end{lstlisting}
+	\caption{Метод выполнения компонентов}
+	\label{f:execute}
+\end{figure}
+
+
+В качестве параметра выступает интерфейс компонента. В данном
+методе происходит выполнение логики компонента. Компонент выполняется
+в зависимости от реализации интерфейса определенного вида компонента.
+Результатом является id следующего компонента.
+
+Передача данных между компонентами происходит через Context. Так
+как структура данных контекста изначально не определена, внутри Context
+находятся данные неопределенного типа.
+
+Объект Context создаётся из JSON методом, представленным на рисунке~\ref{f:new-context}.
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.05\textwidth,
+        xrightmargin=.05\textwidth
+    ]
+func NewContextFromJSON(jsonData []byte) (*Context, error) 
+    \end{lstlisting}
+	\caption{Функция создания контекста}
+	\label{f:new-context}
+\end{figure}
+
+Интерфейс ввода-вывода используется при выполнении компонентов.
+Он позволяет взаимодействовать со средой, в которой выполняются
+компоненты.
+
+Интерфейс ввода-вывода имеет вид, представленный на рисунке~\ref{f:io-interface}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.08\textwidth,
+        xrightmargin=.08\textwidth
+    ]
+type IO interface {
+	PrintText(text string)
+	PrintButtons(text string, buttons []*ButtonData)
+	ReadText() *string
+}
+    \end{lstlisting}
+	\caption{Интерфейс ввода-вывода}
+	\label{f:io-interface}
+\end{figure}
+
+Окружение, которое будет использовать компоненты, должна
+реализовать данный интерфейс.
+
+Интерфейс состоит из следующих методов:
+\begin{itemize}
+	\item PrintText - Вывод текста пользователю;
+	\item PrintButtons - Вывод кнопок пользователю с указанием текста
+	      опроса;
+	\item ReadText - Считывание текста от пользователя, если текст не
+	      введен, возвращается нулевое значение - nil.
+\end{itemize}
+
+
+\paragraph{Список компонентов}
+
+В модуле были реализованы следующие компоненты:
+\begin{itemize}
+	\item стартовый компонент;
+	\item форматирование;
+	\item сообщение;
+	\item ввод текста;
+	\item кнопки.
+\end{itemize}
+
+
+Стартовый компонент служит точкой запуска бота. Его основная задача
+- вернуть следующий компонент для выполнения. У компонентов нет данных,
+выход лишь один – nextComponentId (id следующего компонента).
+
+Компонент форматирования служит для преобразования текста к
+нужному формату посредством вставки необходимых данных. Имеет одно
+поле данных – formatString (строку форматирования). В качестве выхода
+служит поле nextComponentId.
+
+Для вставки данных из контекста служит
+конструкция, представленная на рисунке~\ref{f:format-construct}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}
+\${<getting data from context>}
+    \end{lstlisting}
+	\caption{Конструкция в тексте, которая позволяет вставлять данные из
+		контекста в компоненте форматирования}
+	\label{f:format-construct}
+\end{figure}
+
+
+Компонент сообщение отправляет текст пользователю. Отправка
+происходит через интерфейс ввода-вывода. Данными служит выводимый
+текст – поле text, выход одни – nextComponentId.
+
+Компонент ввода текста ожидает ввода текста от пользователя.
+Получение текста происходит через интерфейс ввода-вывода. У компонента
+нет данных, выход один – nextComponentId.
+
+Компонент кнопок выводит набор кнопок для пользователя. Вывод
+кнопок происходит через интерфейс ввода-вывода.
+Содержит данные, представленные на рисунке~\ref{f:button-component-data}.
+
+Выходы компонента кнопок представлены на рисунке~\ref{f:button-component-outputs}.
+Имена выходов совпадают с элементами поля buttons в data.
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        xleftmargin=.15\textwidth,
+        xrightmargin=.15\textwidth
+        ]
+type Button = {
+    text: string;
+}
+
+data: {
+    text: string,
+    buttons: {
+        <numeric field name>: Button,
+        ...
+    }
+}
+    \end{lstlisting}
+	\caption{Данные компонента кнопок}
+	\label{f:button-component-data}
+\end{figure}
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}
+outputs: {
+    <numeric field name>: number,
+    ...
+}
+    \end{lstlisting}
+	\caption{Выходы компонента кнопок}
+	\label{f:button-component-outputs}
+\end{figure}
+
+
+
