@@ -1,3 +1,5 @@
+// Серверная часть
+
 // Интерфейсы компонентов
 
 package components
@@ -213,3 +215,395 @@ func (tc *TextInputComponent) Execute(ctx *context.Context, io io.IO) (*any, err
 	a = *s
 	return &a, nil
 }
+
+\\ Реализация исполнителя
+
+package exec
+
+import (
+	"github.com/botscubes/bot-components/components"
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/io"
+)
+
+type Executor struct {
+	io  io.IO
+	ctx *context.Context
+}
+
+func NewExecutor(ctx *context.Context, io io.IO) *Executor {
+	return &Executor{
+		io,
+		ctx,
+	}
+}
+
+func (e *Executor) Execute(component components.Component) (*int64, error) {
+	switch cmp := component.(type) {
+	case components.ActionComponent:
+
+		v, err := cmp.Execute(e.ctx)
+		if err != nil {
+			return cmp.GetOutputs().GetIdIfError(), err
+		}
+		e.ctx.SetValue(component.GetPath(), v)
+	case components.ControlComponent:
+		err := cmp.Execute(e.ctx)
+		if err != nil {
+			return cmp.GetOutputs().GetIdIfError(), err
+		}
+	case components.InputComponent:
+		v, err := cmp.Execute(e.ctx, e.io)
+		if err != nil {
+			return cmp.GetOutputs().GetIdIfError(), err
+		}
+		if v != nil {
+			e.ctx.SetValue(component.GetPath(), v)
+		}
+	case components.OutputComponent:
+		err := cmp.Execute(e.ctx, e.io)
+		if err != nil {
+			return cmp.GetOutputs().GetIdIfError(), err
+		}
+
+	default:
+		return nil, ErrComponentNotImplInterface
+	}
+
+	nextId := component.GetOutputs().GetNextComponentId()
+
+	return nextId, nil
+}
+
+# Регистрация обработчиков сервиса ботов
+
+package app
+
+import (
+	"github.com/botscubes/bot-service/internal/api/handlers"
+	m "github.com/botscubes/bot-service/internal/api/middlewares"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+)
+
+func (app *App) regiterHandlers(h *handlers.ApiHandler) {
+	app.server.Get("/api/bots/health", handlers.Health)
+
+	// panic recover
+	app.server.Use(recover.New())
+
+	// Auth middleware
+	app.server.Use(m.Auth(&app.sessionStorage, &app.conf.JWTKey, app.log))
+
+	api := app.server.Group("/api")
+	bots := api.Group("/bots")
+	bot := bots.Group("/:botId<int>", m.GetBotMiddleware(app.db, app.log))
+	groups := bot.Group("/groups")
+	group := groups.Group("/:groupId<int>", m.GetGroupMiddleware(app.db, app.log))
+	components := group.Group("/components")
+	component := components.Group("/:componentId<int>", m.GetComponentMiddleware(app.db, app.log))
+
+	regBotsHandlers(bots, h)
+	regBotHandlers(bot, h)
+	regGroupHandlers(group, h)
+	regComponentsHandlers(components, h)
+
+	regComponentHandlers(component, h)
+
+	// custom 404 handler
+	app.server.Use(handlers.NotFoundHandler)
+}
+
+// Bot handlers
+func regBotsHandlers(bots fiber.Router, h *handlers.ApiHandler) {
+	// Create new bot
+	bots.Post("", h.NewBot)
+	// Get user bots
+	bots.Get("", h.GetBots)
+
+}
+
+func regBotHandlers(bot fiber.Router, h *handlers.ApiHandler) {
+
+	// Delete bot
+	bot.Delete("", h.DeleteBot)
+
+	// Set bot token
+	bot.Patch("/token", h.SetBotToken)
+
+	// Delete bot token
+	bot.Delete("/token", h.DeleteBotToken)
+
+	bot.Get("/token", h.GetBotToken)
+	// Start bot
+	bot.Patch("/start", h.StartBot)
+
+	// Stop bot
+	bot.Patch("/stop", h.StopBot)
+
+	bot.Get("/status", h.GetBotStatus)
+}
+
+func regGroupsHandlers(groups fiber.Router, h *handlers.ApiHandler) {
+
+}
+
+func regGroupHandlers(group fiber.Router, h *handlers.ApiHandler) {
+	group.Post("/connections", h.AddConnetion)
+	group.Delete("/connections", h.DeleteConnection)
+}
+
+func regComponentsHandlers(components fiber.Router, h *handlers.ApiHandler) {
+
+	// Get bot components
+	components.Get("", h.GetBotComponents)
+	components.Post("", h.AddComponent)
+
+}
+
+func regComponentHandlers(component fiber.Router, h *handlers.ApiHandler) {
+	component.Delete("", h.DeleteComponent)
+	component.Patch("/position", h.SetComponentPosition)
+	component.Patch("/data", h.UpdateComponentData)
+}
+
+# Пример обработчика сервиса ботов
+
+func (h *ApiHandler) AddComponent(ctx *fiber.Ctx) error {
+	botId, ok := ctx.Locals("botId").(int64)
+	if !ok {
+		h.log.Errorw("BotId to int64 convert", "error", ErrUserIDConvertation)
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+	groupId, ok := ctx.Locals("groupId").(int64)
+	if !ok {
+		h.log.Errorw("GroupId to int64 convert", "error", ErrUserIDConvertation)
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	reqData := new(model.AddComponentReq)
+	if err := ctx.BodyParser(reqData); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if errValidate := reqData.Validate(); errValidate != nil {
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(errValidate)
+	}
+
+	compId, err := h.db.AddComponent(botId, groupId, &model.Component{
+		Position: reqData.Position,
+		ComponentData: components.ComponentData{
+			ComponentTypeData: components.ComponentTypeData{
+				Type: reqData.Type,
+			},
+			Path: reqData.Type,
+		},
+	})
+	if err != nil {
+		h.log.Errorw("failed add component", "error", err)
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	dataRes := &AddComponentRes{
+		Id: compId,
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(dataRes)
+}
+
+// Обработчики сервиса пользователя
+
+package server
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/botscubes/user-service/internal/user"
+	"github.com/botscubes/user-service/pkg/jwt"
+	"github.com/botscubes/user-service/pkg/password_hash"
+	//"github.com/botscubes/user-service/pkg/service_error"
+	"github.com/labstack/echo/v4"
+)
+
+type ResponseToken struct {
+	Token string `json:"token"`
+	//Error *service_error.ServiceError `json:"error"`
+}
+
+// Handlers for server. Handlers are implemented using a closure.
+func (s *Server) bindHandlers() {
+
+	s.echo.POST("/api/users/signup", func(c echo.Context) error {
+		var u *user.User = new(user.User)
+		if err := c.Bind(u); err != nil {
+			return c.JSON(http.StatusBadRequest, nil)
+		}
+
+		u, service_err := user.NewUser(u.Login, u.Password)
+		if service_err != nil {
+			return c.JSON(http.StatusUnprocessableEntity, service_err)
+		}
+
+		if exists, err := s.userModel.LoginExists(context.Background(), u.Login); err != nil {
+
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		} else if exists {
+			return c.JSON(http.StatusUnprocessableEntity, user.ErrLoginExists)
+		}
+
+		var err error = nil
+		u.Password, err = password_hash.GetPasswordHash(u.Password, s.conf.Server.Salt)
+		if err != nil {
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		err = s.userModel.SaveUser(context.Background(), u)
+		if err != nil {
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		return c.NoContent(http.StatusCreated)
+	})
+
+	s.echo.POST("/api/users/signin", func(c echo.Context) error {
+		var u *user.User = new(user.User)
+		if err := c.Bind(u); err != nil {
+			return c.NoContent(http.StatusBadRequest)
+		}
+
+		u, service_err := user.NewUser(u.Login, u.Password)
+		if service_err != nil {
+			return c.JSON(http.StatusUnprocessableEntity, service_err)
+		}
+
+		id, password, err := s.userModel.GetIdAndPasswordByLogin(context.Background(), u.Login)
+		if err != nil {
+
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		if id == 0 {
+			return c.JSON(http.StatusUnprocessableEntity, user.ErrLoginNotExists)
+		}
+
+		if !password_hash.CheckPasswordHash(u.Password, password, s.conf.Server.Salt) {
+			return c.JSON(http.StatusUnprocessableEntity, user.ErrPasswordIsNotEqual)
+		}
+		claims := jwt.NewUserClaims(
+			id,
+			time.Duration(s.conf.Server.TokenLifeTime)*time.Second,
+		)
+		token, err := jwt.GenerateToken(
+			claims,
+			s.conf.Server.JWTKey,
+		)
+		if err != nil {
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		err = s.tokenStorage.SaveToken(
+			context.Background(),
+			token,
+			claims.GetLifeDuration(),
+		)
+		if err != nil {
+
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		return c.JSON(http.StatusCreated, ResponseToken{token})
+	})
+
+	s.echo.DELETE("/api/users/signout", func(c echo.Context) error {
+		token := c.Get("token").(string)
+		if token == "" {
+			return c.NoContent(http.StatusNoContent)
+		}
+		err := s.tokenStorage.DeleteToken(context.Background(), token)
+		if err != nil {
+			s.echo.Logger.Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		return c.NoContent(http.StatusNoContent)
+
+	}, JWT(s.conf.Server.JWTKey, s.tokenStorage, s.echo.Logger))
+}
+
+// Цикл выполнения компонентов в сервисе, обслуживающем ботов
+
+package bot
+
+import (
+	"errors"
+
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/exec"
+	"github.com/botscubes/bot-components/io"
+	"github.com/botscubes/bot-worker/internal/config"
+)
+
+func (bw *BotWorker) execute(botId int64, groupId int64, userId int64, io io.IO, step int64, ctx *context.Context) error {
+	components, err := bw.storage.components(botId, groupId)
+	if err != nil {
+		return err
+	}
+	const MAX_VISIT = config.MaxLoopInExecution
+	visitedComponents := make(map[int64]int64)
+	e := exec.NewExecutor(ctx, io)
+	for {
+		_, ok := visitedComponents[step]
+		if ok {
+			visitedComponents[step]++
+		} else {
+			visitedComponents[step] = 1
+		}
+		if visitedComponents[step] > MAX_VISIT {
+
+			return errors.New("Loop too long")
+		}
+
+		componentData, ok := components[step]
+		if !ok {
+			break
+		}
+
+		bw.log.Debug(string(componentData.Data))
+		component, err := componentData.Component()
+		if err != nil {
+			return err
+		}
+		st, err := e.Execute(component)
+		if err != nil {
+			var val any = err.Error()
+			ctx.SetValue("error", &val)
+		}
+		if st == nil {
+			step = 0
+			break
+		}
+		if step == *st {
+			break
+		}
+
+		step = *st
+	}
+
+	err = bw.storage.setUserStep(botId, groupId, userId, step)
+	if err != nil {
+		return err
+	}
+	err = bw.storage.setContext(botId, groupId, userId, ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
