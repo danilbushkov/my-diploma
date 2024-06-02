@@ -1,0 +1,215 @@
+// Интерфейсы компонентов
+
+package components
+
+import (
+	"encoding/json"
+
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/io"
+)
+
+type Component interface {
+	GetPath() string
+	GetOutputs() Outputs
+}
+type Outputs interface {
+	GetNextComponentId() *int64
+	GetIdIfError() *int64
+}
+
+type (
+	ActionComponent interface {
+		Component
+
+		Execute(ctx *context.Context) (*any, error)
+	}
+
+	ControlComponent interface {
+		Component
+
+		Execute(ctx *context.Context) error
+	}
+
+	InputComponent interface {
+		Component
+
+		Execute(ctx *context.Context, io io.IO) (*any, error)
+	}
+
+	OutputComponent interface {
+		Component
+
+		Execute(ctx *context.Context, io io.IO) error
+	}
+)
+
+type ComponentTypeData struct {
+	Type ComponentType `json:"type"`
+}
+
+type ComponentOutputs struct {
+	NextComponentId *int64 `json:"nextComponentId"`
+	IdIfError       *int64 `json:"idIfError"`
+}
+
+func (co *ComponentOutputs) GetNextComponentId() *int64 {
+	return co.NextComponentId
+}
+func (co *ComponentOutputs) GetIdIfError() *int64 {
+	return co.IdIfError
+}
+
+type ComponentData struct {
+	ComponentTypeData
+	Id   *int64 `json:"id"`
+	Path string `json:"path"`
+}
+
+func (cd *ComponentData) GetPath() string {
+	return cd.Path
+}
+
+func NewComponentFromJSON(tp ComponentType, jsonData []byte) (Component, error) {
+	switch tp {
+	case TypeStart:
+		var s StartComponent
+		err := json.Unmarshal(jsonData, &s)
+		if err != nil {
+			return nil, err
+		}
+		return &s, nil
+	case TypeFormat:
+		var f FormatComponent
+		err := json.Unmarshal(jsonData, &f)
+		if err != nil {
+			return nil, err
+		}
+		return &f, nil
+	case TypeCondition:
+		var c ConditionComponent
+		err := json.Unmarshal(jsonData, &c)
+		if err != nil {
+			return nil, err
+		}
+		return &c, err
+
+	case TypeMessage:
+		var m MessageComponent
+		err := json.Unmarshal(jsonData, &m)
+		if err != nil {
+			return nil, err
+		}
+		return &m, err
+	case TypeTextInput:
+		var ti TextInputComponent
+		err := json.Unmarshal(jsonData, &ti)
+		if err != nil {
+			return nil, err
+		}
+		return &ti, err
+	case TypeButtons:
+		var bc ButtonComponent
+		err := json.Unmarshal(jsonData, &bc)
+		if err != nil {
+			return nil, err
+		}
+		return &bc, err
+	default:
+		return nil, ErrComponentTypeNotExist
+	}
+}
+
+
+// Реализация компонентов
+
+package components
+
+import (
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/format"
+	"github.com/botscubes/bot-components/io"
+)
+
+type MessageComponent struct {
+	ComponentData
+
+	Outputs ComponentOutputs `json:"outputs"`
+	Data    struct {
+		Text string `json:"text"`
+	} `json:"data"`
+}
+
+func (mc *MessageComponent) GetOutputs() Outputs {
+	return &mc.Outputs
+}
+func (mc *MessageComponent) Execute(ctx *context.Context, io io.IO) error {
+	var s string
+	s, err := format.Format(mc.Data.Text, ctx)
+	if err != nil {
+		return err
+	}
+	io.PrintText(s)
+	return nil
+}
+
+package components
+
+import (
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/format"
+)
+
+type FormatComponent struct {
+	ComponentData
+
+	Outputs ComponentOutputs `json:"outputs"`
+	Data    struct {
+		FormatString string `json:"formatString"`
+	} `json:"data"`
+}
+
+func (fc *FormatComponent) GetOutputs() Outputs {
+	return &fc.Outputs
+}
+
+func (fc *FormatComponent) Execute(ctx *context.Context) (*any, error) {
+	var s any
+	s, err := format.Format(fc.Data.FormatString, ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+package components
+
+import (
+	"errors"
+
+	"github.com/botscubes/bot-components/context"
+	"github.com/botscubes/bot-components/io"
+)
+
+type TextInputComponent struct {
+	ComponentData
+	Outputs ComponentOutputs `json:"outputs"`
+}
+
+func (tc *TextInputComponent) GetOutputs() Outputs {
+	return &tc.Outputs
+}
+
+func (tc *TextInputComponent) Execute(ctx *context.Context, io io.IO) (*any, error) {
+	s := io.ReadText()
+	if s == nil {
+		tc.Outputs.NextComponentId = tc.Id
+		return nil, nil
+	}
+	if *s == "" {
+		return nil, errors.New("Empty string entered")
+	}
+	var a any
+	a = *s
+	return &a, nil
+}
