@@ -67,38 +67,40 @@ Golang – компилируемый язык программирования 
 
 \begin{table}[ht]
 	\Large
-	\caption{Сравнение языков программирования}
-	\label{t:comp-lang}
-	\centering
-	\begin{tabularx}{\textwidth}
-		{|>{}X
-		|>{\centering\arraybackslash}X
-		|>{\centering\arraybackslash}X
-		|>{\centering\arraybackslash}X
-		|>{\centering\arraybackslash}X|}
-		\hline
-		                                        &
-		Удобство написания кода                 &
-		Возможность распараллеливания программы &
-		Быстрота исполнения кода                &
-		Доступность библиотек                                                        \\
-		\hline
-		C++
-		                                        & низкая  & есть & высокая & низкая  \\
-		\hline
-		JavaScript
-		                                        & средняя & нет  & средняя & высокая \\
-		\hline
-		PHP
-		                                        & средняя & нет  & средняя & высокая \\
-		\hline
-		Python
-		                                        & высокая & нет  & средняя & высокая \\
-		\hline
-		Golang
-		                                        & высокая & есть & высокая & высокая \\
-		\hline
-	\end{tabularx}
+	\begin{threeparttable}
+		\caption{Сравнение языков программирования}
+		\label{t:comp-lang}
+		\centering
+		\begin{tabularx}{\textwidth}
+			{|>{}X
+			|>{\centering\arraybackslash}X
+			|>{\centering\arraybackslash}X
+			|>{\centering\arraybackslash}X
+			|>{\centering\arraybackslash}X|}
+			\hline
+			                                        &
+			Удобство написания кода                 &
+			Возможность распараллеливания программы &
+			Быстрота исполнения кода                &
+			Доступность библиотек                                                        \\
+			\hline
+			C++
+			                                        & низкая  & есть & высокая & низкая  \\
+			\hline
+			JavaScript
+			                                        & средняя & нет  & средняя & высокая \\
+			\hline
+			PHP
+			                                        & средняя & нет  & средняя & высокая \\
+			\hline
+			Python
+			                                        & высокая & нет  & средняя & высокая \\
+			\hline
+			Golang
+			                                        & высокая & есть & высокая & высокая \\
+			\hline
+		\end{tabularx}
+	\end{threeparttable}
 	\vspace{\bottompaddingoftable}
 \end{table}
 
@@ -106,7 +108,6 @@ Golang – компилируемый язык программирования 
 По таблице можно сделать вывод, что самым оптимальным выбором для
 написания веб-сервера является язык программирования Golang.
 
-\newpage
 \paragraph{Выбор системы управления базами данных}
 
 Для хранения и управления данными приложения существует множество СУБД,
