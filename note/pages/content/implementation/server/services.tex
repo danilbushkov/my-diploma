@@ -40,7 +40,6 @@
 Формат ошибки содержит два значения – кода ошибки и сообщения,
 которое описывает ошибку.
 
-\newpage
 \paragraph{Программный интерфейс сервиса пользователей}
 
 Сервис пользователей предоставляет следующие запросы:
@@ -110,7 +109,7 @@
 
 	      Тело запроса представлено на рисунке~\ref{f:add-bot-request-body}.
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -125,7 +124,7 @@
 	      Код ответа в случае успеха – 201, тело ответа представлено на
 	      рисунке~\ref{f:add-bot-response-body};
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -147,7 +146,7 @@
 	      на рисунке~\ref{f:get-bot-response-body};
 
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -176,7 +175,7 @@
 	      В случае успеха код ответа 204;
 
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -216,7 +215,7 @@
 	      на рисунке~\ref{f:component-struct-in-response};
 
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}[
@@ -260,7 +259,7 @@
 
 	      Тело запроса представлено на рисунке~\ref{f:add-component-request-body}.
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -293,7 +292,7 @@
 	      Тело запроса представлено на рисунке~\ref{f:update-component-data}.
 
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -315,7 +314,7 @@
 	      Тело запроса представлено на рисунке~\ref{f:update-component-position}.
 
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}
@@ -336,7 +335,7 @@
 
 	      Тело запроса представлено на рисунке~\ref{f:add-connection}.
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}[
@@ -365,7 +364,7 @@
 
 	      Тело запроса представлено на рисунке~\ref{f:delete-connection}.
 
-	      \begin{figure}[ht]
+	      \begin{figure}[!ht]
 		      \centering
 		      \vspace{\toppaddingoffigure}
 		      \begin{lstlisting}[
@@ -385,8 +384,10 @@
 
 \end{itemize}
 
+
 Если пользователь ввел невалидные данные в любой из приведенных
 выше запросов, будет код ответа – 422.
 
 При обращении к API каждый запрос должен содержать следующий
 заголовок: “Authorization: Bearer <token>”.
+
