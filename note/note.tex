@@ -18,6 +18,8 @@
 \usepackage{calc}
 \usepackage{tabularx}
 \usepackage{ifthen}
+\usepackage{threeparttable}
+\usepackage{float}
 
 % Установка пути картинок
 \graphicspath{ {./images/} {./images.example/} }
@@ -33,7 +35,7 @@
     \input{./constants.example.tex}
 }
 % Файл с рамками
-\input{./frames.tex}
+\input{../frames.tex}
 % Файл, в котором содержаться пользовательские команды
 \input{./commands.tex}
 % Общие натройки стилей
@@ -46,11 +48,26 @@
 \input{./styles/caption.tex}
 % Файл стилизации списков
 \input{./styles/lists.tex}
+% Файл стилизации кода
+\input{./styles/listings.tex}
 
 %\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
 
 % Настройка отступов от краёв страницы до текста
 \geometry{top = 15mm, left = 25mm, right = 10mm, bottom = 15mm}
+
+
+% Определение переменной для установки рамок.
+% По умолчанию рамки установлены.
+\newboolean{setframes}
+\setboolean{setframes}{true}
+
+% Подключение файла пользовательских стилей, команд и т.д.
+\IfFileExists{./custom.tex}{
+    \input{./custom.tex}
+}{
+    \input{./custom.example.tex}
+}
 
 % Убираем линию у верхнего колонтитула
 \renewcommand{\headrulewidth}{0pt}
@@ -59,17 +76,20 @@
 \fancypagestyle{mainframe} {
     \fancyhf{}
     \fancyhead[L]{
-        \mainframe
-        {\tpga}
-        {\departmentandgroupinframe}{
-        \topic
-        }
-        {\authorinframe}
-        {\inspectorinframe}
-        {\norminspectorinframe}
-        {\approverinframe}
-        {\thepage}
-        {\total{page}}
+        \mainframe[
+            tpga=\tpga,
+            departmentandgroup=\departmentandgroupinframe,
+            topic=\topic,
+            creator=\authorinframe,
+            inspector=\inspectorinframe,
+            norminspector=\norminspectorinframe,
+            approver=\approverinframe,
+            page=\thepage,
+            total=\total{page},
+            topicstyle={\selectlanguage{nohyphenation}
+                \ifdefined\topicstyleinframe\topicstyleinframe
+                \else\large\fi}
+        ]
     }
 
 }
@@ -100,24 +120,23 @@
 \regtotcounter{page}
 \regtotcounter{equation}
 \regtotcounter{figure}
+\regtotcounter{table}
+\regtotcounter{appendix}
 
-% Подключение файла пользовательских стилей, команд и т.д.
-\IfFileExists{custom.tex}{
-    \input{custom.tex}
-}{
-    \input{custom.example.tex}
-}
+
 
 
 % Начало документа
 \begin{document}
-% Меняем название заголовка таблицы содержимого
-\renewcommand{\contentsname}{\hfill Содержание \hfill}
-% Устанавливаем размер шрифта 14pt
 
+% Устанавливаем размер шрифта 14pt
 \Large
 % Устанавливаем стиль пустой, чтобы убрать дефолтную нумерацию страниц
 \pagestyle{empty}
+
+% Меняем название заголовка таблицы содержимого
+\renewcommand{\contentsname}{\hfill Содержание \hfill}
+
 % Подключаем титульник
 % Титульник не изменяет счётчик страниц, он как бы не участвует в нумерации страниц,
 % поэтому нумерация страниц начнётся со страницы "Реферат". 
@@ -141,12 +160,14 @@
 	\include{pages/abstract.example.tex}
 }
 
-% Устанавливаем главную рамку для одной страницы
-\tocloftpagestyle{mainframe}
+% Установка рамок
+\ifthenelse{\boolean{setframes}}{
+	% Устанавливаем главную рамку для одной страницы
+	\tocloftpagestyle{mainframe}
 
-% Устанавливаем рамку страниц, которая будет отрисовываться после главной
-\pagestyle{pageframe}
-
+	% Устанавливаем рамку страниц, которая будет отрисовываться после главной
+	\pagestyle{pageframe}}{
+	\tocloftpagestyle{empty}\renewcommand{\cftaftertoctitle}{\hfill}}
 % Меняем размер нижнего отступа до текста, чтобы текст до рамки страниц был 10mm.
 % Рамка страниц имеет меньшую высоту содержимого нижней таблицы.
 \addtolength{\textheight}{+25mm}

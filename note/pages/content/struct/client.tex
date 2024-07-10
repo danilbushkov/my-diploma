@@ -1,7 +1,7 @@
 \subsection{Разработка структуры клиентской части конструктора}
 
 
-В данном разделе описываются разработанные структуры клиентской части
+В данном подразделе описываются разработанные структуры клиентской части
 конструктора и его диаграммы состояний.
 
 \subsubsection{Структура интерфейса конструктора}
@@ -24,7 +24,7 @@
 если пользователь не вошёл в систему, иначе - кнопку “выйти из системы”.
 Шаблон представлен на рисунке~\ref{f:general-template}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.6\textwidth]{page-templates/general}
@@ -38,9 +38,9 @@
 регистрации. Шаблон содержимого страницы аутентификации представлен на
 рисунке~\ref{f:auth-template}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
-	\vspace{\toppaddingoffigure}
+	%	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.4\textwidth]{page-templates/auth}
 	\caption{Шаблон содержимого страницы аутентификации}
 	\label{f:auth-template}
@@ -59,7 +59,7 @@
 Шаблон содержимого страницы списка ботов представлен на
 рисунке~\ref{f:list-template}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.7\textwidth]{page-templates/list}
 	\caption{Шаблон содержимого страницы списка ботов}
@@ -71,9 +71,9 @@
 рисунке~\ref{f:form-template}.
 
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
-	\vspace{\toppaddingoffigure}
+	%	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.4\textwidth]{page-templates/form}
 	\caption{Шаблон содержимого страницы создания бота}
 	\label{f:form-template}
@@ -103,7 +103,7 @@
 	\item модуль хранилища.
 \end{itemize}
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.7\textwidth]{structures/client-editor/mod}
@@ -142,7 +142,7 @@ API клиент.
 Компонентная структура визуального редактора представлена на
 рисунке~\ref{f:comp-client-editor-struct}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.9\textwidth]{structures/client-editor/comp}
@@ -206,15 +206,19 @@ API клиент.
 Расположение компонентов на шаблоне визуального редактора
 представлено на рисунке~\ref{f:editor-template}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\vspace{\toppaddingoffigure}
 	\includegraphics[width=0.9\textwidth]{page-templates/editor}
 	\caption{Шаблон визуального редактора}
 	\label{f:editor-template}
 \end{figure}
-
+\newpage
 \subsubsection{Разработка диаграмм состояний клиентской части конструктора}
+
+Диаграммы состояний помогают визуализировать различные состояния системы и переходы между ними, что облегчает понимание её работы.
+Далее приводятся разработанные диаграммы состояний клиентской части конструктора, а также
+её основной части - визуального редактора.
 
 \paragraph{Диаграмма состояний клиентской части}
 
@@ -223,7 +227,7 @@ API клиент.
 Диаграмма состояний клиентской части конструктора представлена на
 рисунке~\ref{f:client-state-diagram}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.9\textwidth]{state-diagrams/client}
 	\caption{Диаграмма состояний клиентской части конструктора}
@@ -265,7 +269,7 @@ API клиент.
 Диаграмма состояний визуального редактора представлена на
 рисунке~\ref{f:editor-state-diagram}.
 
-\begin{figure}[ht]
+\begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.8\textwidth]{state-diagrams/editor}
 	\caption{Диаграмма состояний визуального редактора}

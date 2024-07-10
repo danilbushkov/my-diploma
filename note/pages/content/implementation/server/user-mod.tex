@@ -1,0 +1,49 @@
+\subsubsection{Реализация модуля пользователей}
+
+Модуль пользователей предоставляет интерфейс и его реализацию для
+авторизации пользователей в системе.
+
+Интерфейс представлен на рисунке~\ref{f:auth-interface}.
+
+
+\begin{figure}[ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}[
+        language=Go,
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+type TokenStorage interface {
+	SaveToken(ctx context.Context, 
+              token string, 
+              lifeDuration time.Duration) error
+
+	DeleteToken(ctx context.Context, 
+                token string) error
+
+	CheckToken(ctx context.Context, 
+               token string) (bool, error)
+
+	Close() error
+}
+
+    \end{lstlisting}
+	\caption{Интерфейс, предоставляющий возможность авторизации
+		пользователей}
+	\label{f:auth-interface}
+\end{figure}
+
+Функция сохранения токена принимает токен, время его жизни и
+сохраняет его в хранилище, который определяется реализацией интерфейса.
+
+Функция удаления удаляет токен из хранилища.
+
+Функция проверки позволяет удостовериться в валидности
+принимаемого токена.
+
+Функция закрытия служит для закрытия соединения с определенным в
+реализации хранилищем.
+
+Данный интерфейс используется сервисом ботов и сервисом
+пользователей.

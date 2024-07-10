@@ -1,0 +1,392 @@
+\subsubsection{Реализация сервисов}
+
+Сервисы предоставляют API для обеспечения выполнения основных функций конструктора.
+Далее приводится описание их программных интерфейсов.
+
+\paragraph{Коды ответов}
+
+Сервисы работают по протоколу HTTP и имею следующие возможные
+коды ответов \refref{ref:http}:
+\begin{itemize}
+	\item 200 (Ok) - Успешный ответ с содержимим в теле;
+	\item 201 (Created) - Успешный ответ после создания ресурса. Может
+	      содержать информацию о вновь созданном ресурсе;
+	\item 204 (No Content) - Успешный ответ без содержимого в теле;
+	\item 400 (Вad Request) - Неверно составлен запрос;
+	\item 401 (Unauthorized) - Не авторизован;
+	\item 404 (Not Found) - Ресурс не найден;
+	\item 422 (Unprocessable Entity) - Ошибки бизнес логики. В теле ответа
+	      содержится подробное описание ошибки;
+	\item 500 (Internal Server Error) - Внутренняя ошибка сервера.
+\end{itemize}
+
+Формат ошибки в теле ответа, если код равен 422, представлена на
+рисунке~\ref{f:error-struct}.
+
+
+\begin{figure}[!ht]
+	\centering
+	\vspace{\toppaddingoffigure}
+	\begin{lstlisting}
+{
+    code: integer,
+    message: string
+}
+    \end{lstlisting}
+	\caption{Формат ошибки в случае кода ответа 422}
+	\label{f:error-struct}
+\end{figure}
+
+Формат ошибки содержит два значения – кода ошибки и сообщения,
+которое описывает ошибку.
+
+\paragraph{Программный интерфейс сервиса пользователей}
+
+Сервис пользователей предоставляет следующие запросы:
+\begin{itemize}
+	\item регистрация:
+
+	      Запрос: POST /api/users/signup.
+
+	      Структура тела запроса представлена на рисунке~\ref{f:signup-request-body}.
+
+	      \begin{figure}[ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "login": "string"
+    "password": "string"
+}
+    \end{lstlisting}
+		      \caption{Тело запроса регистрации}
+		      \label{f:signup-request-body}
+	      \end{figure}
+
+	      Ответ: в случае успеха - статус кода HTTP - 201. В случае некорректных
+	      данных - статус кода HTTP - 422 с описанием ошибки в теле ответа;
+
+
+	\item аутентификация:
+
+	      Запрос: POST /api/users/signin.
+
+	      Структура тела запроса представлена на рисунке~\ref{f:signup-request-body}.
+
+	      Ответ: В случае успеха - статус кода HTTP - 201 c телом ответа, который
+	      представлена на рисунке~\ref{f:signin-response-body}.
+
+	      \begin{figure}[ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "token": "string"
+}
+        \end{lstlisting}
+		      \caption{Тело ответа при аутентификации в случае успеха}
+		      \label{f:signin-response-body}
+	      \end{figure}
+
+	      В случае некорректных данных - статус кода HTTP - 422 с описание
+	      ошибки в теле ответа;
+
+	\item выход из системы:
+
+	      Запрос: DELETE /api/users/signout.
+
+\end{itemize}
+Ответ: В случае успеха - статус кода HTTP - 204. Если пользователь не
+авторизован - 401.
+
+\paragraph{Программный интерфейс сервиса ботов}
+
+Сервис ботов предоставляет следующий интерфейс:
+\begin{itemize}
+	\item создание бота:
+
+	      Запрос: POST /api/bots.
+
+	      Тело запроса представлено на рисунке~\ref{f:add-bot-request-body}.
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "token": "string"
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при создании бота}
+		      \label{f:add-bot-request-body}
+	      \end{figure}
+
+	      Код ответа в случае успеха – 201, тело ответа представлено на
+	      рисунке~\ref{f:add-bot-response-body};
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "botId": "integer",
+    "component": "component"
+}
+    \end{lstlisting}
+		      \caption{Тело ответа при создании бота}
+		      \label{f:add-bot-response-body}
+	      \end{figure}
+
+	\item получение списка ботов:
+
+	      Запрос: GET /api/bots.
+
+	      В случае успеха код ответа 200, с телом ответа, содержащим список
+	      ботов, структура которых представлена
+	      на рисунке~\ref{f:get-bot-response-body};
+
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "id": "integer",
+    "title": "string",
+    "status": "integer"
+}
+    \end{lstlisting}
+		      \caption{Структура бота}
+		      \label{f:get-bot-response-body}
+	      \end{figure}
+
+	\item удаление бота:
+
+	      Запрос: DELETE /api/bots/{botId}.
+
+	      В случае успеха код ответа 204;
+
+	\item установка токена бота:
+
+	      Запрос: POST /api/bots/{botId}/token.
+
+	      Тело запроса представлено на рисунке~\ref{f:set-token-request-body}.
+
+	      В случае успеха код ответа 204;
+
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "token": "string"
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при установке токена бота}
+		      \label{f:set-token-request-body}
+	      \end{figure}
+
+
+	\item получение токена бота:
+	      Запрос: GET /api/bots/{id}/token.
+
+	      В случае успеха код ответа 200 с телом ответа, содержащим токен бота
+	      в виде строки;
+
+	\item запуск бота:
+
+	      Запрос: PATCH /api/bots/{id}/start.
+
+	      В случае успеха код ответа 204;
+
+	\item остановка бота:
+
+	      Запрос: PATCH /api/bots/{id}/stop.
+
+	      В случае успеха код ответа 204;
+
+	\item получение компонентов бота:
+
+	      Запрос: GET /api/bots/{botId}/groups/{groupId}/components
+
+	      В случае успеха код ответа 200 с телом ответа, содержащим список
+	      компонентов, структура которых представлена
+	      на рисунке~\ref{f:component-struct-in-response};
+
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}[
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+{
+    "id": "integer",
+    "type": "string",
+    "data": "object",
+    "path": "string",
+    "outputs": {
+        "nextComponentId": "integer",
+        ...
+    },
+    "connectionPoints": {
+        "<pointId: string>": {
+            "sourceComponentId": "integer",
+            "sourcePointName": "string",
+            "relativePointPosition": {
+                "x": "integer",
+                "y": "integer"
+            }
+        }
+        ...
+    },
+    "position": {
+        "x": "integer",
+        "y": "integer"
+    }
+}\end{lstlisting}
+		      \caption{Структура компонента при ответе на запрос}
+		      \label{f:component-struct-in-response}
+	      \end{figure}
+
+
+	\item создание компонента:
+
+	      Запрос: POST /api/bots/{botId}/groups/{groupId}/components.
+
+	      Тело запроса представлено на рисунке~\ref{f:add-component-request-body}.
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "type": "string",
+    "position": {
+        "x": "integer",
+        "y": "integer"
+    }
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при создании компонента}
+		      \label{f:add-component-request-body}
+	      \end{figure}
+
+	      Тело ответа содержит id вновь созданного компонента в случае успеха с
+	      кодом ответа 201;
+
+	\item удалить компонент:
+
+	      Запрос: PATCH /api/bots/{botId}/groups/{groupId}/components/{compId}/data.
+
+	      В случае успеха код ответа 204;
+
+
+	\item изменить данные компонента:
+
+	      Запрос: PATCH /api/bots/{botId}/groups/{groupId}/components/{compId}/data.
+
+	      Тело запроса представлено на рисунке~\ref{f:update-component-data}.
+
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "<property name>": "any",
+    ...
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при изменении данных компонента}
+		      \label{f:update-component-data}
+	      \end{figure}
+
+	      В случае успеха код ответа 204;
+
+	\item изменить позицию компонента:
+
+	      Запрос: PATCH /api/bots/{botId}/groups/{groupId}/components/{compId}/position.
+
+	      Тело запроса представлено на рисунке~\ref{f:update-component-position}.
+
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}
+{
+    "x": "integer",
+    "y": "integer"
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при изменении позиции компонента}
+		      \label{f:update-component-position}
+	      \end{figure}
+
+	      В случае успеха код ответа 204;
+
+	\item добавить соединение между компонентами:
+
+	      Запрос: POST /api/bots/{botId}/groups/{groupId}/connections.
+
+	      Тело запроса представлено на рисунке~\ref{f:add-connection}.
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}[
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+{
+    "sourceComponentId": "integer",
+    "sourcePointName": "string",
+    "targetComponentId": "integer",
+    "relativePointPosition": {
+        "x": "integer",
+        "y": "integer"
+    }
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при добавлении соединения между компонентами}
+		      \label{f:add-connection}
+	      \end{figure}
+
+	      В случае успеха код ответа 204;
+
+	\item добавить соединение между компонентами:
+
+	      Запрос: DELETE /api/bots/{botId}/groups/{groupId}/connections.
+
+	      Тело запроса представлено на рисунке~\ref{f:delete-connection}.
+
+	      \begin{figure}[!ht]
+		      \centering
+		      \vspace{\toppaddingoffigure}
+		      \begin{lstlisting}[
+        xleftmargin=.1\textwidth,
+        xrightmargin=.1\textwidth
+    ]
+{
+    "sourceComponentId": "integer",
+    "sourcePointName": "string"
+}
+    \end{lstlisting}
+		      \caption{Тело запроса при удалении соединения между компонентами}
+		      \label{f:delete-connection}
+	      \end{figure}
+
+	      В случае успеха код ответа 204.
+
+\end{itemize}
+
+
+Если пользователь ввел невалидные данные в любой из приведенных
+выше запросов, будет код ответа – 422.
+
+При обращении к API каждый запрос должен содержать следующий
+заголовок: “Authorization: Bearer <token>”.
+
