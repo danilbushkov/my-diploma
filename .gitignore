@@ -8,4 +8,4 @@
 *.xdv
 *.out
 
-output/
+# output/
